@@ -5,6 +5,7 @@ from .models import School, Course
 
 User = get_user_model()
 
+
 class SchoolSerializer(serializers.ModelSerializer):
     # courses = serializers.PrimaryKeyRelatedField(many=True, queryset=Course.objects.all())
 
