@@ -30,7 +30,7 @@ class School(models.Model):
 
     name = models.CharField(default ='', max_length=200)
     institution_type = models.CharField(default = '', max_length=30)
-    school_id = models.IntegerField(default=0)
+    school_id = models.CharField(default='', max_length=6)
     city = models.CharField(default='', max_length=100)
     state = models.CharField(default='', max_length=2)
     website_id = models.IntegerField(default=0)
