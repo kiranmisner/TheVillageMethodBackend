@@ -1,0 +1,19 @@
+[
+{
+  "model": "api.customuser",
+  "pk": "70e2b38c-729a-46bc-ad99-9219ced473a5",
+  "fields": {
+    "password": "pbkdf2_sha256$180000$sxA9A8RRZ3gL$estqrYIYporDHb2p80TWQpGo4xNQmNSDWBVyFsLDKGU=",
+    "last_login": null,
+    "is_superuser": true,
+    "first_name": "",
+    "last_name": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2020-07-12T20:59:55.281Z",
+    "email": "admin@admin.com",
+    "groups": [],
+    "user_permissions": []
+  }
+}
+]
