@@ -5,13 +5,14 @@ from .models import School, Course
 
 User = get_user_model()
 
-
 class SchoolSerializer(serializers.ModelSerializer):
     # courses = serializers.PrimaryKeyRelatedField(many=True, queryset=Course.objects.all())
+    # course_set = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = School
         fields = ['id', 'name', 'institution_type', 'school_id', 'city', 'state', 'website_id']
+
 
 class CourseSerializer(serializers.ModelSerializer):
 
@@ -19,3 +20,11 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = ['id', 'name', 'school', 'is_honors', 'provider', 'academic_years', 'grade_levels', 'course_length',
             'transcript_abbs', 'subject', 'ag_designation']
+
+class SchoolCoursesSerializer(serializers.ModelSerializer):
+    # course_set = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    course_set = CourseSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = School
+        fields = ['course_set']

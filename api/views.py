@@ -3,7 +3,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 
 from .models import School, Course
-from .serializers import SchoolSerializer, CourseSerializer
+from .serializers import SchoolSerializer, CourseSerializer, SchoolCoursesSerializer
 from rest_framework.permissions import IsAdminUser
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.decorators import action
@@ -12,6 +12,10 @@ from rest_framework.response import Response
 #
 #  https://www.django-rest-framework.org/api-guide/viewsets/#modelviewset
 #
+
+class SchoolCoursesViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = School.objects.all()
+    serializer_class = SchoolCoursesSerializer
 
 class SchoolViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = School.objects.all()

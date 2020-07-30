@@ -35,7 +35,7 @@ class School(models.Model):
     state = models.CharField(default='', max_length=2)
     website_id = models.IntegerField(default=0)
     def __str__(self):
-        return self.name
+        return self.name + " (" + str(self.id) + ")"
 
 class Course(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -44,19 +44,22 @@ class Course(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, default=1)
 
     is_honors = models.BooleanField(default=False)
-    provider = models.CharField(default='', max_length=200)
+    provider = models.CharField(default='', max_length=200, blank=True)
     academic_years = ArrayField(
         base_field=models.CharField(default='', max_length=7),
-        default=list
+        default=list,
+        blank=True
     )
     grade_levels = ArrayField(
         base_field=models.IntegerField(default=0),
-        default=list
+        default=list,
+        blank=True
     )
     course_length = models.CharField(default='', max_length=15)
     transcript_abbs = ArrayField(
         base_field=models.CharField(default='', max_length=50),
-        default=list
+        default=list,
+        blank=True
     )
     subject = models.CharField(default='', max_length=50)
     ag_designation = models.CharField(default='', max_length=1)
