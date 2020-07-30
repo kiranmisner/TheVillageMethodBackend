@@ -28,10 +28,10 @@ ALLOWED_HOSTS = ["the-village-method-app.herokuapp.com"]
 # https://github.com/kennethreitz/dj-database-url
 
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600, ssl_require=True)
 }
 
-DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
+# DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
 
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
