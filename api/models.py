@@ -1,9 +1,11 @@
 
 import uuid
+from decimal import Decimal
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
 
 from .managers import CustomUserManager
 
@@ -24,9 +26,9 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
+
 class School(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # id = models.IntegerField(default=0)
 
     name = models.CharField(default ='', max_length=200)
     institution_type = models.CharField(default = '', max_length=30)
@@ -41,7 +43,7 @@ class Course(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(default='', max_length=200)
 
-    school = models.ForeignKey(School, on_delete=models.CASCADE, default=1)
+    school = models.ForeignKey(School, on_delete=models.CASCADE)
 
     is_honors = models.BooleanField(default=False)
     provider = models.CharField(default='', max_length=200, blank=True)
@@ -66,3 +68,15 @@ class Course(models.Model):
 
     def __str__(self):
         return self.name
+
+class Grade(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    value = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal(0.00))
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("course", "user")
+
+    def __str__(self):
+        return self.value
