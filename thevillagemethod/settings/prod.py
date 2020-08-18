@@ -29,9 +29,20 @@ ALLOWED_HOSTS = ["the-village-method-app.herokuapp.com"]
 
 DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600, ssl_require=True)
+    'salesforce': {
+        'ENGINE': 'salesforce.backend',
+        'CONSUMER_KEY': os.environ.get('CONSUMER_KEY'),                # 'client_id'   in OAuth2 terminology
+        'CONSUMER_SECRET': os.environ.get('CONSUMER_SECRET'),             # 'client_secret'
+        'USER': os.environ.get('SALESFORCE_USER'),
+        'PASSWORD': os.environ.get('SALESFORCE_PW_TOKEN'),
+        'HOST': 'https://test.salesforce.com',
+    }
 }
 
-# DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
+DATABASE_ROUTERS = [
+    "salesforce.router.ModelRouter"
+]
 
+# DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

@@ -21,5 +21,17 @@ DATABASES = {
         'PASSWORD': 'thevillagemethod',
         'HOST': 'localhost',
         'PORT': '5432'
+    },
+    'salesforce': {
+        'ENGINE': 'salesforce.backend',
+        'CONSUMER_KEY': '3MVG9jBOyAOWY5bX1guqUGLubgfbOz6pig5FWe_DxbQEIpCgJ0EAcO4uGqr9HGvycTLlDEkJwJrfzQqqpRe3R',                # 'client_id'   in OAuth2 terminology
+        'CONSUMER_SECRET': 'D7D6456030FA54E96D6E2ED786DE953E010B397EA350DD9A1E11E9466A723E64',             # 'client_secret'
+        'USER': 'kiran.misner@gmail.com',
+        'PASSWORD': 'codeforgood123eMTXXg68orZsNFcTZvZ1Byqc6',
+        'HOST': 'https://test.salesforce.com',
     }
 }
+
+DATABASE_ROUTERS = [
+    "salesforce.router.ModelRouter"
+]

@@ -25,7 +25,6 @@ class SchoolSerializer(serializers.ModelSerializer):
         model = School
         fields = ['id', 'name', 'institution_type', 'school_id', 'city', 'state', 'website_id']
 
-
 class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:

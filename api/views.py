@@ -15,12 +15,6 @@ from rest_framework.generics import CreateAPIView, ListCreateAPIView
 #  https://www.django-rest-framework.org/api-guide/viewsets/#modelviewset
 #
 
-# class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    # queryset = CustomUser.objects.all()
-    # serializer_class = UserSerializer
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAdminUser]
-
 class CreateUserView(CreateAPIView):
     model = get_user_model()
     permission_classes = [AllowAny]
