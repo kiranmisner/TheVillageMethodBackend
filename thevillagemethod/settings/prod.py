@@ -28,7 +28,7 @@ ALLOWED_HOSTS = ["the-village-method-app.herokuapp.com"]
 # https://github.com/kennethreitz/dj-database-url
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600, ssl_require=True)
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600, ssl_require=True),
     'salesforce': {
         'ENGINE': 'salesforce.backend',
         'CONSUMER_KEY': os.environ.get('CONSUMER_KEY'),                # 'client_id'   in OAuth2 terminology
