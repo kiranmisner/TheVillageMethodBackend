@@ -1,52 +1,63 @@
+"""
+Summary:
+    Represents the necessary viewset classes for this backend framework. These classes represent the available
+    endpoints for interacting with the backend.
+"""
 from django.shortcuts import render
-from django.contrib.auth import get_user_model 
+from django.contrib.auth import get_user_model
 
 from rest_framework import viewsets
+from rest_framework.permissions import AllowAny # TODO: Add IsAdminUser when ready to create the GradeView class
+# TODO: Add the below dependencies when ready to create the GradeView class
+# from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+# from rest_framework.generics import ListCreateAPIView
 
-from .models import School, Course, Grade, CustomUser
-from .serializers import SchoolSerializer, CourseSerializer, SchoolCoursesSerializer, GradeSerializer, UserSerializer
-from rest_framework.permissions import IsAdminUser, AllowAny
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView, ListCreateAPIView
+from .models import School, Course
+from .serializers import SchoolSerializer, CourseSerializer, SchoolCoursesSerializer, UserSerializer
 
-#
-#  https://www.django-rest-framework.org/api-guide/viewsets/#modelviewset
-#
-
-class CreateUserView(CreateAPIView):
-    model = get_user_model()
+class CreateUserViewSet(viewsets.ModelViewSet):
+    """
+    Summary:
+        Represents a Model viewset for the CustomUser model. Provides CRUD operations for user accounts.
+    """
+    queryset = get_user_model().objects.all()
     permission_classes = [AllowAny]
     serializer_class = UserSerializer
 
 class SchoolCoursesViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Summary:
+        Represents a Model viewset for the School model (course list only). Provides read-only operations for school
+        course lists.
+    """
     queryset = School.objects.all()
     serializer_class = SchoolCoursesSerializer
 
 class SchoolViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Summary:
+        Represents a Model viewset for the School model. Provides read-only operations for School instances.
+    """
     queryset = School.objects.all()
     serializer_class = SchoolSerializer
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Summary:
+        Represents a Model viewset for the Course model. Provides read-only operations for Course instances.
+    """
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
-class ChangeSchoolViewSet(viewsets.ModelViewSet):
-    queryset = School.objects.all()
-    serializer_class = SchoolSerializer
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAdminUser]
-
-class ChangeCourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAdminUser]
+"""
+TODO: Implement grade class-based view that extends the ListCreateAPIView, as shown below:
 
 class GradeView(ListCreateAPIView):
     queryset = Grade.objects.all()
     serializer_class = GradeSerializer
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAdminUser]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+"""
