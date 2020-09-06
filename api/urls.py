@@ -11,7 +11,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import SchoolViewSet, CourseViewSet, SchoolCoursesViewSet, CreateUserViewSet
 
 # Initialize and register routes through the default router
-router = routers.DefaultRouter()
+router = routers.SimpleRouter()
 router.register(r'courses', CourseViewSet)
 router.register(r'schools', SchoolViewSet)
 router.register(r'schoolcourses', SchoolCoursesViewSet)

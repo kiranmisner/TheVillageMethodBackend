@@ -7,18 +7,20 @@ from django.shortcuts import render
 from django.contrib.auth import get_user_model
 
 from rest_framework import viewsets
+from rest_framework import mixins
 from rest_framework.permissions import AllowAny # TODO: Add IsAdminUser when ready to create the GradeView class
 # TODO: Add the below dependencies when ready to create the GradeView class
 # from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-# from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, CreateAPIView
 
 from .models import School, Course
 from .serializers import SchoolSerializer, CourseSerializer, SchoolCoursesSerializer, UserSerializer
 
-class CreateUserViewSet(viewsets.ModelViewSet):
+# class CreateUserViewSet(viewsets.ModelViewSet):
+class CreateUserViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     Summary:
-        Represents a Model viewset for the CustomUser model. Provides CRUD operations for user accounts.
+        Represents a Model viewset for the CustomUser model. Provides a create operation for user accounts.
     """
     queryset = get_user_model().objects.all()
     permission_classes = [AllowAny]
