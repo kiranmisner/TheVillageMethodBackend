@@ -3,7 +3,7 @@ import concurrent.futures
 
 class Scraper:
   def __init__(self):
-
+    self.run_start_time = None
 
   def run_scraper_worker(self, website_id, years, force_rescraping):
     scraper_worker = ScraperWorker()
