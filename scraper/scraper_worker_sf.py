@@ -63,7 +63,6 @@ class ScraperWorker:
     """
     # Initializes the webdriver object, installing ChromeDriver if necessary
     self._driver = self._create_driver()
-
     # Initializes remaining fields
     self._website_address = "https://hs-articulation.ucop.edu/agcourselist/institution/"
     self._schools = []
@@ -73,7 +72,7 @@ class ScraperWorker:
     self._course_error_ids = []
     self._error_output = ""
     self._sf = Salesforce(username=environ.get('SF_USERNAME'), password=environ.get('SF_PASSWORD'), 
-                         security_token=environ.get('SF_TOKEN'), domain='test')
+                          security_token=environ.get('SF_TOKEN'), domain='test')
 
     # This field is dynamically set in _parse_school depending on the website URL
     self._NAMESPACE = None
@@ -103,6 +102,9 @@ class ScraperWorker:
     chrome_options.add_argument("--disable-features=NetworkService")
     chrome_options.add_argument("--window-size=1920x1080")
     chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+
+    # Add experimental option to prevent all logging
+    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
     return webdriver.Chrome(ChromeDriverManager(cache_valid_range=cache_valid_range).install(),
       options=chrome_options)
@@ -190,11 +192,12 @@ class ScraperWorker:
     if not force_rescraping:
       # Get the date of most recent update from the A-G website
       last_updated = self.get_last_updated()
-
       if last_updated and last_updated_sf and last_updated_sf >= last_updated:
-        self._error_output += f"""This school (Website ID: ${website_id}, Academic ID: ${academic_id}) was already scraped
-                         recently: Last updated on ${str(last_updated).partition(" ")[0]} versus last modified on
-                         Salesforce on ${str(last_updated_sf).partition(" ")[0]}"""
+        last_updated_string = str(last_updated).partition(" ")[0]
+        last_updated_sf_string = str(last_updated_sf).partition(" ")[0]
+        self._error_output += f"This school (Website ID: {website_id}, Academic ID: {academic_id}) was already scraped"
+        self._error_output += f" recently: Last updated on {last_updated_string} versus last modified on Salesforce on"
+        self._error_output += f" {last_updated_sf_string}\n"
         return True
     return False
 
@@ -209,12 +212,17 @@ class ScraperWorker:
     """
     try:
       last_updated_div = self._wait("//div[@class='listLastUpdated']")
-      date_string = last_updated_div.text.partition(': ')[2]
-      if date_string:
-        # Convert from a string to a datetime object
-        return datetime.strptime(date_string, '%b %d, %Y')
-      else:
-        return None
+      date_text = last_updated_div.text
+      date_string = date_text.partition(': ')[2]
+      for i in range(5):    
+        if date_string:
+          # Convert from a string to a datetime object
+          return datetime.strptime(date_string, '%b %d, %Y')
+        else:
+          last_updated_div = self._wait("//div[@class='listLastUpdated']")
+          date_text = last_updated_div.text
+          date_string = date_text.partition(': ')[2]
+      return None
     except TimeoutException:
       return None
 
@@ -224,7 +232,7 @@ class ScraperWorker:
         Gets the most recent date of change from the Salesforce database, or None if the date cannot be found.
 
     Args:
-        school_id (string): The Salesforce ID for the current school being scraped.
+        school_id (string): The unique A-G identifier used to differentiate different schools.
 
     Returns:
         datetime: The most recent date of change from the Salesforce database for the current school, or None if the
@@ -241,8 +249,8 @@ class ScraperWorker:
       else:
         return None
     except SalesforceError:
-      error_string = "An error occurred while obtaining the most recent date of change for school with Salesforce ID "
-                     + school_id "."
+      error_string = f"""An error occurred while obtaining the most recent date of change for school with Salesforce ID
+                         {school_id}."""
       error_message = format_exc()
       self._error_output += error_string + "\n" + error_message + "\n"
       return None
@@ -492,7 +500,6 @@ class ScraperWorker:
 
     # Clicks on the close button using JS to avoid width errors, and to prevent access to already scraped courses
     self._driver.execute_script("arguments[0].click();", expanded_course_div.find_element_by_xpath(".//a"))
-
     return {
         'Name': course_title,
         'High_School__c': school_sf_id, 
@@ -545,10 +552,10 @@ class ScraperWorker:
     """
     courses = []
     # Obtain the valid academic year ids for this webpage
-    academic_year_ids = self.get_academic_year_ids(website_id, years)
+    academic_year_ids = self._get_academic_year_ids(website_id, years)
     for academic_id in academic_year_ids:
       # Load the webpage with the current academic ID
-      self.load_webpage(self._website_address + str(website_id), website_id, academic_id=academic_id)
+      self._load_webpage(self._website_address + str(website_id), website_id, academic_id=academic_id)
       # Only rescrape data if the course has not been recently scraped
       if not self._recently_scraped(website_id, academic_id, last_updated_sf, force_rescraping):
         # Go through the course divs and create a new course dictionary for each one
@@ -681,7 +688,7 @@ class ScraperWorker:
         institution_type (string): The type of the current institution, usually specified by the _get_institution_type
                                    method.
         years (int): The number of years, starting from the most recent year, from which data should be scraped.
-        school_id (string): The unique Salesforce ID of the current school.
+        school_id (string): The unique A-G identifier used to differentiate different schools.
         force_rescraping (bool): Specifies whether the scraper should rescrape data which has not been recently
                                  updated.
 
@@ -704,20 +711,20 @@ class ScraperWorker:
     # Check to see if the school needs to be scraped
     last_updated_sf = self._get_last_updated_sf(school_id)
     # Create or update school on Salesforce database
-    if not self.upsert_school(school_id, new_school):
+    if not self._upsert_school(school_id, new_school):
       return
 
     # Obtain the courses to serialize into Salesforce
-    courses_to_add = self._parse_courses(school_id, website_id, years, self.get_sf_high_school_id(school_id),
+    courses_to_add = self._parse_courses(school_id, website_id, years, self._get_sf_high_school_id(school_id),
                                          last_updated_sf, force_rescraping)
     # Loop through the courses and attempt to serialize each one
     for course in courses_to_add:
       try:
-        external_id = self.get_uuid_of_course(course['Name'])
-        self.upsert_sf_course(external_id, course)
+        external_id = self._get_uuid_of_course(course['Name'])
+        self._upsert_sf_course(external_id, course)
       except SalesforceError:
         error_string = "An error occurred while serializing a Course object in Salesforce:"
-        error_message = traceback.format_exc()
+        error_message = format_exc()
         self._error_output += error_string + "\n" + error_message + "\n"
         continue
 
@@ -742,8 +749,7 @@ class ScraperWorker:
     # Save the namespace for this website, which is a hash linked to the address of the webpage
     self._NAMESPACE = uuid5(NAMESPACE_URL, address)
     # Try to load the webpage
-    self.load_webpage(address, website_id)
-    
+    self._load_webpage(address, website_id)
     # Ensure that the webpage is valid by checking to see if it has a valid institution type
     inst_type = self._get_institution_type()
     if inst_type == "":
@@ -759,42 +765,98 @@ class ScraperWorker:
   ################################## PRIVATE METHODS FOR SERIALIZING INTO SALESFORCE ##################################
   #####################################################################################################################
 
-  def get_property_from_query(self, prop, query):
+  def _get_property_from_query(self, prop, query):
+    """
+    Summary:
+        Indexes into the query response from Salesforce to extract the desired property.
+
+    Args:
+        prop (string): The name of the property to extract from the query.
+        query (dict): The response from a previous Salesforce query.
+
+    Returns:
+        object: The desired property that was queried.
+    """
     return query['records'][0][prop]
 
-  def upsert_school(self, school_id, data):
+  def _upsert_school(self, school_id, data):
+    """
+    Summary:
+        Updates an existing School instance on Salesforce, or inserts a new instance if no such instance is found.
+
+    Args:
+        school_id (string): The unique A-G identifier used to differentiate different schools. Used as an external ID
+                            in this case.
+        data (dict): The School object dictionary representation containing data to update the school with.
+
+    Returns:
+        bool: True if the school was upserted properly, False otherwise.
+    """
     if not school_id:
-      print("School ID was not found, aborting upsert.")
       return False
     self._sf.HighSchool__c.upsert(f'School_ID__c/{school_id}', data)
     return True
 
-  def get_sf_high_school_id(self, school_id):
+  def _get_sf_high_school_id(self, school_id):
+    """
+    Summary:
+        Extracts the high school ID (Salesforce ID) for 
+
+    Args:
+        school_id (string): The unique A-G identifier used to differentiate different schools. Used as an external ID
+                            in this case.
+
+    Returns:
+        string: The Salesforce ID for the high school with specified school ID.
+    """
     query = self._sf.query(f"SELECT Id FROM HighSchool__c WHERE School_ID__c = '{school_id}'")
-    return self.get_property_from_query('Id', query)
+    return self._get_property_from_query('Id', query)
 
-  def create_sf_course(self, data):
-    self._sf.Course__c.create(data)
+  def _upsert_sf_course(self, external_id, data):
+    """
+    Summary:
+        Updates an existing Course instance on Salesforce, or inserts a new instance if no such instance is found.
 
-  def upsert_sf_course(self, external_id, data):
-    # print("Beginning upsert")
+    Args:
+        external_id (string): The external UUID generated by self.NAMESPACE for each course.
+        data (dict): The Course object dictionary representation containing data to update the course with.
+    """
     try:
-      # print(getattr(self._sf, "Course__c").describe())
-      code = getattr(self._sf, "Course__c").upsert(f'External_ID__c/{external_id}', data)
-      # code = self._sf.Course__c.upsert(f'External_ID__c/{external_id}', data)
-      # print(f"Status code for upserting course {data['Name']} ({external_id}): {code}")
-    except Exception:
-      print("Some exception occurred while upserting")
-      print(format_exc())
+      getattr(self._sf, "Course__c").upsert(f'External_ID__c/{external_id}', data)
+    except SalesforceError:
+      error_string = f"A SalesforceError occurred while upserting course with ID {external_id}"
+      error_message = format_exc()
+      self._error_output += error_string + "\n" + error_message + "\n"
 
-  def get_uuid_of_course(self, course_name):
+  def _get_uuid_of_course(self, course_name):
+    """
+    Summary:
+        Generates a deterministic UUID for any course based on the course's name and the URL of the school page. Since
+        the URL namespace is determined dynamically when the scraper begins to run, a UUID can be generated using this
+        namespace and the course name.
+        Note: This function assumes that a course's name will be unique within the scope of its school - if this is not
+        the case, there may be an error while upserting a course with a matching name.
+
+    Args:
+        course_name (string): The name of the course for which a UUID should be determined.
+
+    Returns:
+        string: The UUID for the specified course.
+    """
     return str(uuid5(self._NAMESPACE, course_name))
 
   #####################################################################################################################
   ################################## PRIVATE METHODS FOR OBTAINING YEAR INFORMATION ###################################
   #####################################################################################################################
 
-  def get_buttons_div(self):
+  def _get_buttons_div(self):
+    """
+    Summary:
+        Extracts the div containing the academic year buttons from the A-G school course page.
+
+    Returns:
+        WebElement: The div element containing the academic year buttons.
+    """
     try:
       return self._wait("//div[@class='gridButtonMain']")
     except TimeoutException:
@@ -803,15 +865,22 @@ class ScraperWorker:
       self._error_output += error_string + "\n" + error_message + "\n"
       return None
 
-  def get_active_button(self):
+  def _get_active_button(self):
+    """
+    Summary:
+        Finds the current button that is active, which corresponds with the active year for which data is being
+        obtained.
+
+    Returns:
+        WebElement: The button element that corresponds with the active year.
+    """
     try:
-      buttons_div = self.get_buttons_div()
+      buttons_div = self._get_buttons_div()
       if buttons_div:
         buttons_list = buttons_div.find_elements_by_xpath(".//button")
         for button in buttons_list:
           if "btnActive" in button.get_attribute("class").split(" "):
             return button
-        # self._error_output += "Last button text: " + buttons_list[len(buttons_list) - 1].text + "\n"
         if buttons_list:
           return buttons_list[len(buttons_list) - 1]
         else:
@@ -824,7 +893,25 @@ class ScraperWorker:
       self._error_output += error_string + "\n" + error_message + "\n"
       return None
 
-  def get_valid_academic_year_ids(self, website_id, years, first_academic_id, first_active_button_text):
+  def _get_valid_academic_year_ids(self, website_id, years, first_academic_id, first_active_button_text):
+    """
+    Summary:
+        Obtains a list of valid academic year IDs by trying different academic IDs and determining which ones are
+        valid. This is achieved by the fact that the A-G course list website will match any invalid ID with the most
+        recent year's course list, which allows for a comparison to determine if the proposed academic ID is valid or
+        not.
+        Note: This function assumes there is at least one valid academic ID for the school course page, and that the
+        most recent year of courses is valid.
+
+    Args:
+        website_id (int): The unique 3-4 digit ID used by the A-G course list website to identify institutions.
+        years (int): The number of years, starting from the most recent year, from which data should be scraped.
+        first_academic_id (int): The first academic ID (assumed to be valid) that the webpage defaults to.
+        first_active_button_text (string): The text of the first active button.
+
+    Returns:
+        list: A list of all valid academic IDs, with length less than or equal to years.
+    """
     if years < 1:
       return []
     # Include first year as a special case
@@ -834,16 +921,27 @@ class ScraperWorker:
       # Ensure each ID is valid by comparing the active button text with the text for the active button when the first
       # academic ID was used (except the first time). If it matches, but the academic ID differs from the first ID, the
       # year is invalid. Otherwise, the year can be scraped (although the course list may be empty still).
-      self.load_webpage(self._website_address + str(website_id), website_id, academic_id=i)
-      active_button = self.get_active_button()
+      self._load_webpage(self._website_address + str(website_id), website_id, academic_id=i)
+      active_button = self._get_active_button()
       if active_button and (not active_button.text == first_active_button_text):
         valid_academic_ids.append(i)
     
     return valid_academic_ids
 
-  def get_academic_year_ids(self, website_id, years):
+  def _get_academic_year_ids(self, website_id, years):
+    """
+    Summary:
+        Wrapper method that sets up the webpage to extract valid academic year IDs and return them as a list.
+
+    Args:
+        website_id (int): The unique 3-4 digit ID used by the A-G course list website to identify institutions.
+        years (int): The number of years, starting from the most recent year, from which data should be scraped.
+
+    Returns:
+        list: A list of all valid academic IDs, with length less than or equal to years.
+    """
     # Find button for current academic year
-    first_active_button = self.get_active_button()
+    first_active_button = self._get_active_button()
     # Click on button for current academic year
     if first_active_button:
       self._driver.execute_script("arguments[0].click();", first_active_button)
@@ -854,14 +952,11 @@ class ScraperWorker:
     # Extract academic ID from link and save, get range of academic IDs based on the value of years
     wait = WebDriverWait(self._driver, 12)
     wait.until(lambda driver: "academicYearId" in driver.current_url)
-    # wait.until(EC.title_contains("academicYearId"))
     first_academic_id = int(self._driver.current_url[self._driver.current_url.rfind("=") + 1:])
     
-    # Return the list of academic IDs, which are ensured to be scrapeable, as self._get_course_divs() will handle the
+    # Return the list of academic IDs, which are ensured to be scrapable, as self._get_course_divs() will handle the
     # empty course list case
-    return self.get_valid_academic_year_ids(website_id, years, first_academic_id, first_active_button.text)
-
-  # TODO: Skip page if last update was before second most recent run
+    return self._get_valid_academic_year_ids(website_id, years, first_academic_id, first_active_button.text)
 
   #####################################################################################################################
   ######################################### PUBLIC METHODS FOR USE BY CLIENT ##########################################
@@ -883,17 +978,15 @@ class ScraperWorker:
     """
     try:
       self._parse_school(self._website_address + str(website_id), website_id, years, force_rescraping)
-    #   return (self._schools, self._error_output, self._num_courses, self._invalid_ids, self._school_error_ids, \
-    #     self._course_error_ids)
-    except Exception:
+      return (self._schools, self._error_output, self._num_courses, self._invalid_ids, self._school_error_ids,
+        self._course_error_ids)
+    except (WebDriverException, SalesforceError):
       error_string = "An error occurred while scraping school with ID " + str(website_id) + "."
       error_message = format_exc()
-      print(error_string)
-      print(error_message)
       self._error_output += error_string + "\n" + error_message + "\n"
       self._school_error_ids.append(website_id)
-    #   return (self._schools, self._error_output, self._num_courses, self._invalid_ids, self._school_error_ids, \
-    #     self._course_error_ids)
+      return (self._schools, self._error_output, self._num_courses, self._invalid_ids, self._school_error_ids,
+        self._course_error_ids)
 
   def close(self):
     """ 
@@ -902,19 +995,3 @@ class ScraperWorker:
         directly after the ScraperWorker instance has completed its scraping objective.
     """
     self._driver.close()
-
-def run_scraper(website_id, years, force_rescraping=False):
-  scraper_worker = ScraperWorker()
-  scraper_worker.run_page(website_id, years, force_rescraping)
-  scraper_worker.close()
-
-if __name__ == "__main__":
-  # sw = ScraperWorker()
-  # school_id = "052508"
-  # print(sw._get_last_updated_sf(school_id))
-
-  years = 4
-  website_ids = list(range(320, 322))
-  force_rescraping = False
-  with concurrent.futures.ThreadPoolExecutor() as executor:
-    executor.map(lambda website_id: run_scraper(website_id, years, force_rescraping), website_ids)

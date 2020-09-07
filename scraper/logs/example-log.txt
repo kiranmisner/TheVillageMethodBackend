@@ -1,0 +1,20 @@
+Date: 09/07/20
+Time to run scraper: 00:00:17.13
+Websites visited: 2
+Years scraped: 4
+Average number of courses per school course page: 0
+Average time to scrape one school course page: 00:00:08.57
+Estimated time to run scraper fully (~5141 school course pages): 12:13:52.80
+
+Invalid website IDs: 
+    321
+Error website IDs (while creating a School object): None
+Error website IDs (while creating a Course object): None
+
+Error Messages:
+This school (Website ID: 320, Academic ID: 24) was already scraped recently: Last updated on 2018-08-14 versus last modified on Salesforce on 2020-09-07
+This school (Website ID: 320, Academic ID: 23) was already scraped recently: Last updated on 2018-08-14 versus last modified on Salesforce on 2020-09-07
+This school (Website ID: 320, Academic ID: 22) was already scraped recently: Last updated on 2018-08-14 versus last modified on Salesforce on 2020-09-07
+This school (Website ID: 320, Academic ID: 21) was already scraped recently: Last updated on 2017-09-06 versus last modified on Salesforce on 2020-09-07
+
+
