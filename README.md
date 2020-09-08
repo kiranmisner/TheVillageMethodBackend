@@ -57,7 +57,7 @@ Developed by Tufts undergraduates as a part of the Code for Good initiative duri
 2. Ensure that you are still in the proper virtual environment for your development (you should see "env" prepended before your shell), and that you are on the proper branch that you wish to be updated.
 3. If you have added any additional dependencies, add them to requirements.txt with the command `pip freeze > requirements.txt`.
 4. Change into the directory where you have made changes, and add those changes with `git add .`. If you prefer to add files individually, you can specify the name of each file you modified/created with `git add <name-of-file>`.
-5. Commit these changes with `git commit -m <your-commit-message-here>`.
+5. Commit these changes with `git commit -m "<your-commit-message-here>"`.
 6. Push these changes to the corresponding remote branch with `git push`. If this is your first time pushing, use the command `git push --set-upstream origin <remote-branch-name>`.
 7. Ensure that these changes were pushed properly by visiting https://github.com/kiranmisner/TheVillageMethodBackend and checking the repository. Again, make sure you are viewing the correct branch while doing so.
 8. Ensure that you have a Heroku account linked to the Heroku app for this project. To do so, create an account at https://signup.heroku.com/ and contact Kiran Misner who will add your account as an authorized contributor.
