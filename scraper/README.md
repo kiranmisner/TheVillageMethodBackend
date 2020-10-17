@@ -22,6 +22,22 @@ which is uploaded to The Village Method's Salesforce database in real time.
 8. To run the scraper with the settings already entered in main.py, run the command `python main.py`. If you would like to modify these settings, open main.py and modify the parameters being passed into the `run` method.
 9. The scraper should be up and running! Follow the progress in your Linux terminal, and once the scraper has finished, check the newly created log file in the logs subdirectory to view a summary of the scraping process.
 
+## Running the Scraper
+
+1. Open main.py and examine the line containing the `run` command, which should look something like the following:
+
+   `web_scraper.run(first_website_id=320, last_website_id=350, years=4, force_rescraping=False)`
+
+2. Let's examine what each of these parameters does in greater detail.  
+   * `first_website_id`: Represents the website ID of the first school to be scraped. This can be found by examining the URL of any valid AG school course page. For example, if I wanted the first scraped school to be the International Polytechnic High School (the default), I would search for this school on the AG Course List webpage, click on the school listing, and examine the address. In this case, the URL would be https://hs-articulation.ucop.edu/agcourselist/institution/320, so the value of first_website_id would be 320.
+   * `last_website_id`: The same as `first_website_id`, except for the last school to be scraped.
+   * `years`: The number of past years to scrape information from. For example, if `years` is set to 4, that means the four most recent years of course information will be scraped. Note that the individual years scraped depends on the information available via the AG course list. Let's assume the most recent year is 2020, and a given school does not have any information for the year 2017. If `years` is set to 4, then the scraper will obtain course data from the years 2020, 2019, 2018, and 2016 for that specific school. In summary, `years` will obtain the most recent four years of course information, regardless of the time gaps between such data.
+   * `force_rescraping`: Tells the scraper whether or not it should rescrape information that it already has in Salesforce. By setting this parameter to `False`, the scraper will skip over any schools that have been scraped more recently than the page was last updated. When this parameter is set to `True`, it will rescrape all schools it encounters, regardless of whether or not the school has already been scraped recently. It can be useful to set this parameter to `True` if you want to overwrite all data on Salesforce for a given range of schools, perhaps if data was corrupted from an external source or if a clean data refresh is necessary for other reasons.
+
+3. Change the values of parameters that are not to your liking. Given the descriptions of these parameters, it should be straightforward to identify the best values for your needs.
+
+4. Save your changes, then open a Linux terminal with a valid python installation. If necessary, follow steps 4-8 of the previous section in order to run the scraper.
+
 ## Pushing to GitHub
 
 1. Make sure your changes are thoroughly tested and fully ready to commit.
